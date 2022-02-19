@@ -1,0 +1,34 @@
+name: Check download checksums from TuxFamily servers
+on:
+  push:
+  schedule:
+    # Every day at midnight (UTC).
+    - cron: '0 0 * * *'
+
+jobs:
+  check-downloads:
+    name: Check download checksums
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        include:
+          - { godot-version: "4.0", godot-status: alpha2 }
+          - { godot-version: "4.0", godot-status: alpha1 }
+          - { godot-version: "3.4.2", godot-status: stable }
+          - { godot-version: "3.4.1", godot-status: stable }
+          - { godot-version: "3.4", godot-status: stable }
+          - { godot-version: "3.3.4", godot-status: stable }
+          - { godot-version: "3.2.3", godot-status: stable }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+
+      - name: Download release
+        run: |
+          ./download-all.sh ${{ matrix.godot-version }} ${{ matrix.godot-status }}
+          ls -l -- *
+
+      - name: Validate SHA-512 checksums
+        run: |
+          sha512sum --strict --check SHA512-SUMS-${{ matrix.godot-version }}.${{ matrix.godot-status }}.txt
